@@ -148,7 +148,7 @@ const props = withDefaults(defineProps<Props>(), {
   },
 })
 
-const emit = defineEmits(['change'])
+const emit = defineEmits(['change', 'update:isEditing'])
 
 const store = useFewsPropertiesStore()
 const configStore = useConfigStore()
@@ -185,6 +185,10 @@ onBeforeMount(() => {
     }
   })
   store.loadFlagSources()
+})
+
+watch(isEditing, (value) => {
+  emit('update:isEditing', value)
 })
 
 watch(props.config, () => {
