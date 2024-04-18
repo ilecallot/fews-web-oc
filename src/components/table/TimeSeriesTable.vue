@@ -13,7 +13,6 @@
       no-filter
       fixed-header
       height="100%"
-      @click:row="handleRowClick"
     >
       <template v-slot:headers="{ columns }">
         <tr>
@@ -33,7 +32,11 @@
                 <div class="table-header-indicator-text">
                   <span>{{ column.title }}</span>
                   <div
-                    v-if="index === 0 && selected !== undefined"
+                    v-if="
+                      index === 0 &&
+                      selected !== undefined &&
+                      equidistantSeries.length < config.series.length
+                    "
                     class="table-header__actions"
                   >
                     <v-btn
@@ -148,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 import TableTooltip from './TableTooltip.vue'
 import type { ChartConfig } from '@/lib/charts/types/ChartConfig'
@@ -202,6 +205,16 @@ const tableHeaders = ref<TableHeaders[]>([])
 
 const isEditing = ref<boolean>(false)
 const editedSeriesIds = ref<string[]>([])
+
+const equidistantSeries = computed(() => {
+  return Object.entries(props.series)
+    .filter(([_, series]) =>
+      series.header.timeStep !== undefined && 'unit' in series.header.timeStep
+        ? series.header.timeStep?.unit !== 'nonEquidistant'
+        : true,
+    )
+    .map(([id]) => id)
+})
 
 onBeforeMount(() => {
   if (props.config !== undefined) {
@@ -334,6 +347,8 @@ function addRowToTimeSeries(row: TableData, position: 'before' | 'after') {
     isNewRow: {},
   }
   editedSeriesIds.value.forEach((id) => {
+    if (equidistantSeries.value.includes(id)) return
+
     newRow[id] = row[id]
   })
 
